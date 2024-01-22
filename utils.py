@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-import numpy as np
+import sys
+
+root_path = r'C:\Users\16230\Desktop\KGAN-main'
+sys.path.append(root_path)
 import pickle
 import os
 from model.rgat_file.read_rgat_data import *
@@ -8,7 +11,7 @@ import json
 from pytorch_pretrained_bert import BertModel, BertTokenizer
 
 bert_tokenizer = BertTokenizer.from_pretrained(
-    r'../bert-base-uncased/vocab.txt')
+    r'C:\Users\16230\Desktop\bert-base-uncased\vocab.txt')
 
 
 def pad_dataset(dataset, bs):
@@ -90,11 +93,11 @@ def read(path):
 
 
 def load_data(ds_name):
-    data_npz = 'dataset_npy/dataset_%s.npz' % ds_name
-    vocab_npy = 'dataset_npy/vocab_%s.npy' % ds_name
+    data_npz = root_path + '/dataset_npy/dataset_%s.npz' % ds_name
+    vocab_npy = root_path + '/dataset_npy/vocab_%s.npy' % ds_name
     if not os.path.exists(data_npz):
-        train_file = './dataset/%s/train.txt' % ds_name
-        test_file = './dataset/%s/test.txt' % ds_name
+        train_file = root_path + '/dataset/%s/train.txt' % ds_name
+        test_file = root_path + '/dataset/%s/test.txt' % ds_name
         train_set = read(path=train_file)
         test_set = read(path=test_file)
         train_wc = [t['wc'] for t in train_set]
@@ -187,11 +190,11 @@ def read_dep(path):
 
 
 def load_data_dep(ds_name):
-    data_npz = 'dataset_npy/dataset_%s_dep.npz' % ds_name
-    vocab_npy = 'dataset_npy/vocab_%s_dep.npy' % ds_name
+    data_npz = root_path + '/dataset_npy/dataset_%s_dep.npz' % ds_name
+    vocab_npy = root_path + '/dataset_npy/vocab_%s_dep.npy' % ds_name
     if not os.path.exists(data_npz):
-        train_file = './dataset/%s/train.txt' % ds_name
-        test_file = './dataset/%s/test.txt' % ds_name
+        train_file = root_path + '/dataset/%s/train.txt' % ds_name
+        test_file = root_path + '/dataset/%s/test.txt' % ds_name
         train_set = read_dep(path=train_file)
         test_set = read_dep(path=test_file)
         train_wc = [t['wc'] for t in train_set]
@@ -585,8 +588,8 @@ def word2id(vocab, sent, max_len):
 
 
 def get_embedding(vocab, ds_name, args, types):
-    emb_file = "glove.840B.300d.txt"
-    pkl = 'embeddings/%s_840B.pkl' % ds_name
+    emb_file = r"C:\Users\glove.840B.300d.txt"
+    pkl = root_path + '/embeddings/%s_840B.pkl' % ds_name
     n_emb = 0
     graph_emb = 0
     if types != 'only_graph':
@@ -608,26 +611,25 @@ def get_embedding(vocab, ds_name, args, types):
 
     if types == 'only_graph':
         if args.ds_name == '14semeval_laptop':
-            graph_file = 'embeddings/entity_embeddings_analogy_400.txt'
+            graph_file = r'C:\Users\entity_embeddings_analogy_400.txt'
             if args.is_bert == 0:
-                graph_pkl = 'embeddings/%s_graph_analogy.pkl' % ds_name
+                graph_pkl = root_path + '/embeddings/%s_graph_analogy.pkl' % ds_name
             else:
-                graph_pkl = 'embeddings/%s_graph_analogy_bert.pkl' % ds_name
+                graph_pkl = root_path + '/embeddings/%s_graph_analogy_bert.pkl' % ds_name
             # graph_pkl = 'embeddings/%s_graph_analogy_roberta.pkl' % ds_name
         elif args.ds_name == '14semeval_rest':
-            graph_file = 'embeddings/entity_embeddings_distmult_200.txt'
+            graph_file = r'C:\Users\entity_embeddings_distmult_200.txt'
             if args.is_bert == 0:
-                graph_pkl = 'embeddings/%s_graph_dismult.pkl' % ds_name
+                graph_pkl = root_path + '/embeddings/%s_graph_dismult.pkl' % ds_name
             else:
-                graph_pkl = 'embeddings/%s_graph_dismult_bert.pkl' % ds_name
+                graph_pkl = root_path + '/embeddings/%s_graph_dismult_bert.pkl' % ds_name
             # graph_pkl = 'embeddings/%s_graph_dismult_roberta.pkl' % ds_name
         elif args.ds_name == 'Twitter':
-            graph_file = 'embeddings/entity_embeddings_distmult_200.txt'
+            graph_file = root_path + '/embeddings/entity_embeddings_distmult_200.txt'
             if args.is_bert == 0:
-                graph_pkl = 'embeddings/%s_graph_dismult.pkl' % ds_name
+                graph_pkl = root_path + '/embeddings/%s_graph_dismult.pkl' % ds_name
             else:
-                graph_pkl = 'embeddings/%s_graph_dismult_bert.pkl' % ds_name
-
+                graph_pkl = root_path + '/embeddings/%s_graph_dismult_bert.pkl' % ds_name
         if not os.path.exists(graph_pkl):
             graph_embeddings = np.zeros((len(vocab) + 1, args.dim_k), dtype='float32')
             with open(graph_file, encoding='utf-8') as fp:

@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+import shutil
+import sys
+
+root_path = r'C:\Users\16230\Desktop\KGAN-main'
+sys.path.append(root_path)
 import argparse
 import time
 from model.ATAE_LSTM import ATAE_LSTM, ATAE_LSTM_Bert
@@ -147,7 +152,8 @@ def train(args, times=0):
                     # del model_dict['embed.weight']
                     # del model_dict['graph_embed.weight']
                     torch.save(model_dict,
-                               './model_weight/temp/{}_{}_time{}.pth'.format(args.model, args.ds_name, times))
+                               root_path + '/model_weight/temp/{}_{}_time{}.pth'.format(args.model, args.ds_name,
+                                                                                        times))
                 if save_f1 < eval_f1:
                     save_f1 = eval_f1
 
@@ -435,27 +441,35 @@ def inference(args, model_path=None):
 
 
 if __name__ == '__main__':
-
-    dataset_name = '14semeval_laptop'
+    # 每次构建数据集不一样，需要清空以下两文件夹
+    try:
+        shutil.rmtree(root_path + '/embeddings')
+    except:
+        print('dir had cleand')
+    try:
+        shutil.rmtree(root_path + '/dataset_npy')
+    except:
+        print('dir had cleand')
+    os.mkdir(root_path + '/embeddings')
+    os.mkdir(root_path + '/dataset_npy')
 
     parser = argparse.ArgumentParser(description='KGNN settings')
-    parser.add_argument("-ds_name", type=str,
-                        default="14semeval_rest" if dataset_name == 'Rest14' else "14semeval_laptop",
-                        help="dataset name")  ##14semeval_rest, 14semeval_laptop
-    parser.add_argument("-bs", type=int, default=64 if dataset_name == 'Rest14' else 32,
-                        help="batch size, 64 for rest, 32 for laptop")
-    parser.add_argument("-dropout_rate", type=float, default=0.5, help="dropout rate for sentimental features")
-    parser.add_argument("-learning_rate", type=float, default=0.001, help="learning rate for sentimental features")
-    parser.add_argument("-n_epoch", type=int, default=20, help="number of training epoch")
+    parser.add_argument("--dataset_name", type=str, help="dataset name")
+    parser.add_argument("--ds_name", type=str, help="dataset name")  ##14semeval_rest, 14semeval_laptop
+    parser.add_argument("--bs", type=int, help="batch size, 64 for rest, 32 for laptop")
+    parser.add_argument("--dropout_rate", type=float, help="dropout rate for sentimental features")
+    parser.add_argument("--learning_rate", type=float, help="learning rate for sentimental features")
+    parser.add_argument("--n_epoch", type=int, help="number of training epoch")
+    dataset_name = parser.parse_args().dataset_name
     parser.add_argument('-model', type=str, default="KGNN", help="model name")
     parser.add_argument("-dim_w", type=int, default=300, help="dimension of word embeddings")
     parser.add_argument("-dim_k", type=int, default=200 if dataset_name == 'Rest14' else 400,
                         help="dimension of knowledge graph embeddings, 400 for laptop, 200 for rest")
-    parser.add_argument("-is_test", type=int, default=1, help="test the model: 1 for test")
+    parser.add_argument("-is_test", type=int, default=0, help="test the model: 1 for test")
     parser.add_argument("-is_bert", type=int, default=0, help="glove-based model: 1 for bert")
 
     args = parser.parse_args()
-
+    print('--KGAN START')
     acc, f1 = [], []
     train_time = []
 
@@ -482,6 +496,17 @@ if __name__ == '__main__':
         avg_f1 = sum(f1) / len(f1)
         best_time = min(train_time)
         avg_time = sum(train_time) / len(train_time)
+
+        real_train_file = ''
+        if args.ds_name == '14semeval_laptop':
+            real_train_file = r'C:\Users\16230\Desktop\KGAN-main\dataset\14semeval_laptop\train.txt'
+        if args.ds_name == '14semeval_rest':
+            real_train_file = r'C:\Users\16230\Desktop\KGAN-main\dataset\14semeval_rest\train.txt'
+        json_f = {}
+        for i in range(len(acc)):
+            json_f[seed.__str__() + i.__str__()] = {'test_acc': acc[i], 'test_f1': f1[i], 'epoch': args.n_epoch}
+        f_out = open(real_train_file + '.outcome.json', 'w')
+        f_out.write(json.dumps(json_f))
         print('The results of {} : '.format(args.ds_name), '\n',
               'best_acc: {}  best_f1: {} min_time: {}'.format(best_acc, best_f1, best_time), '\n',
               'avg_acc: {}  avg_f1: {} avg_time: {}'.format(avg_acc, avg_f1, avg_time))
