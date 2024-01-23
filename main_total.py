@@ -26,12 +26,13 @@ import torch
 
 warnings.filterwarnings('ignore')
 
-os.environ['CUDA_VISIBLE_DEVICES'] = "0"  # "0,1,2,3"
-seed = 14
-np.random.seed(seed)
-random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed(seed)
+
+def set_seed(seed):
+    os.environ['CUDA_VISIBLE_DEVICES'] = "0"  # "0,1,2,3"
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
 
 
 def _reset_params(model):
@@ -450,8 +451,26 @@ if __name__ == '__main__':
         shutil.rmtree(root_path + '/dataset_npy')
     except:
         print('dir had cleand')
+    try:
+        shutil.rmtree(root_path + '/model_weight/temp')
+    except:
+        print('dir had cleand')
+
+    # 合并原数据与增强数据
+    f_laptop_s = open(r'C:\Users\16230\Desktop\KGAN-main\dataset\train_laptop.txt')
+    f_laptop_d = open(r'C:\Users\16230\Desktop\KGAN-main\dataset\14semeval_laptop\train.txt')
+    f_laptop_n = f_laptop_s.read() + f_laptop_d.read()
+    f_laptop_d = open(r'C:\Users\16230\Desktop\KGAN-main\dataset\14semeval_laptop\train.txt', 'w')
+    f_laptop_d.write(f_laptop_n)
+    f_rest_s = open(r'C:\Users\16230\Desktop\KGAN-main\dataset\train_rest.txt')
+    f_rest_d = open(r'C:\Users\16230\Desktop\KGAN-main\dataset\14semeval_rest\train.txt')
+    f_rest_n = f_rest_s.read() + f_rest_d.read()
+    f_rest_d = open(r'C:\Users\16230\Desktop\KGAN-main\dataset\14semeval_rest\train.txt', 'w')
+    f_rest_d.write(f_rest_n)
+
     os.mkdir(root_path + '/embeddings')
     os.mkdir(root_path + '/dataset_npy')
+    os.mkdir(root_path + '/model_weight/temp')
 
     parser = argparse.ArgumentParser(description='KGNN settings')
     parser.add_argument("--dataset_name", type=str, help="dataset name")
@@ -460,6 +479,7 @@ if __name__ == '__main__':
     parser.add_argument("--dropout_rate", type=float, help="dropout rate for sentimental features")
     parser.add_argument("--learning_rate", type=float, help="learning rate for sentimental features")
     parser.add_argument("--n_epoch", type=int, help="number of training epoch")
+    parser.add_argument("--seeds", type=list, help="seed")
     dataset_name = parser.parse_args().dataset_name
     parser.add_argument('-model', type=str, default="KGNN", help="model name")
     parser.add_argument("-dim_w", type=int, default=300, help="dimension of word embeddings")
@@ -470,6 +490,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print('--KGAN START')
+
     acc, f1 = [], []
     train_time = []
 
@@ -481,7 +502,8 @@ if __name__ == '__main__':
         test_acc, test_f1 = inference(args, test_path)
         print("Test : acc: {} f1: {}".format(test_acc, test_f1))
     else:
-        for i in range(5):
+        for i in range(args.seeds):
+            set_seed(args.seeds[i])
             if args.is_bert == 1:
                 a_acc, a_f1, a_time = train_bert(args, is_bert=True)
             else:
@@ -502,9 +524,12 @@ if __name__ == '__main__':
             real_train_file = r'C:\Users\16230\Desktop\KGAN-main\dataset\14semeval_laptop\train.txt'
         if args.ds_name == '14semeval_rest':
             real_train_file = r'C:\Users\16230\Desktop\KGAN-main\dataset\14semeval_rest\train.txt'
-        json_f = {}
-        for i in range(len(acc)):
-            json_f[seed.__str__() + i.__str__()] = {'test_acc': acc[i], 'test_f1': f1[i], 'epoch': args.n_epoch}
+        json_f = []
+        for i in range(len(args.seeds)):
+            json_f.append({"seed": args.seeds[i], "test_acc": acc[i].tolist(), "test_f1": f1[i].tolist(),
+                           "epoch": args.n_epoch})
+
+        print(json_f)
         f_out = open(real_train_file + '.outcome.json', 'w')
         f_out.write(json.dumps(json_f))
         print('The results of {} : '.format(args.ds_name), '\n',
